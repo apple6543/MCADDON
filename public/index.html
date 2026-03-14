@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MC Addon Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
+<style>
+:root {
+  --bg: #0a0c0f;
+  --bg2: #0f1218;
+  --bg3: #151a21;
+  --bg4: #1c2330;
+  --bg5: #222c3a;
+  --border: #1e2835;
+  --border2: #2a3545;
+  --border3: #354560;
+  --green: #4ade80;
+  --green-dim: #166534;
+  --green-glow: rgba(74,222,128,0.08);
+  --amber: #fbbf24;
+  --blue: #60a5fa;
+  --red: #f87171;
+  --purple: #a78bfa;
+  --teal: #2dd4bf;
+  --text: #e2e8f0;
+  --text2: #94a3b8;
+  --text3: #475569;
+  --font-d: 'Syne', sans-serif;
+  --font-m: 'JetBrains Mono', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-m); display: flex; flex-direction: column; }
+
+/* ─── HEADER ─── */
+header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0; z-index: 10;
+}
+.logo { width: 28px; height: 28px; background: var(--green); border-radius: 3px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.logo svg { width: 16px; height: 16px; }
+.hd-title { font-family: var(--font-d); font-weight: 800; font-size: 14px; letter-spacing: -0.01em; }
+.hd-sub { font-size: 9px; color: var(--text3); letter-spacing: 0.06em; margin-top: 1px; }
+.hd-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); box-shadow: 0 0 5px var(--green); animation: pd 2.5s ease-in-out infinite; }
+@keyframes pd { 0%,100%{opacity:1}50%{opacity:.3} }
+.badge { font-size: 9px; background: var(--bg4); border: 1px solid var(--border2); color: var(--amber); padding: 2px 7px; border-radius: 3px; font-family: var(--font-m); }
+.hd-btn { font-size: 10px; background: transparent; border: 1px solid var(--border2); color: var(--text3); padding: 4px 9px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; }
+.hd-btn:hover { border-color: var(--blue); color: var(--blue); }
+.hd-btn.danger:hover { border-color: var(--red); color: var(--red); }
+#addon-name-input { background: var(--bg3); border: 1px solid var(--border2); color: var(--amber); padding: 3px 8px; border-radius: 3px; font-family: var(--font-m); font-size: 11px; width: 140px; outline: none; }
+#addon-name-input:focus { border-color: var(--amber); }
+
+/* ─── TAB BAR ─── */
+.tab-bar {
+  display: flex; gap: 0; border-bottom: 1px solid var(--border);
+  background: var(--bg2); flex-shrink: 0;
+}
+.tab { padding: 8px 16px; font-size: 11px; cursor: pointer; border-right: 1px solid var(--border); color: var(--text3); transition: all .15s; display: flex; align-items: center; gap: 6px; letter-spacing: 0.04em; font-family: var(--font-m); background: transparent; border-top: none; border-bottom: none; border-left: none; }
+.tab:hover { color: var(--text2); background: var(--bg3); }
+.tab.active { color: var(--green); background: var(--bg3); border-bottom: 2px solid var(--green); }
+.tab .tab-count { background: var(--bg5); color: var(--text3); font-size: 9px; padding: 1px 5px; border-radius: 10px; }
+.tab.active .tab-count { background: var(--green-dim); color: var(--green); }
+
+/* ─── MAIN LAYOUT ─── */
+.main { display: flex; flex: 1; overflow: hidden; }
+
+/* ─── CHAT PANEL ─── */
+#chat-panel { display: flex; flex-direction: column; flex: 1; min-width: 0; overflow: hidden; }
+#messages { flex: 1; overflow-y: auto; }
+#messages::-webkit-scrollbar { width: 3px; }
+#messages::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.msg-row { display: flex; border-bottom: 1px solid var(--border); animation: fi .2s ease; }
+@keyframes fi { from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)} }
+.msg-row.user { background: var(--bg2); }
+.msg-row.assistant { background: var(--bg); }
+.msg-gutter { width: 46px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding-top: 14px; }
+.msg-av { width: 24px; height: 24px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; }
+.msg-row.user .msg-av { background: var(--bg4); border: 1px solid var(--border2); color: var(--blue); }
+.msg-row.assistant .msg-av { background: var(--green-dim); border: 1px solid var(--green); color: var(--green); }
+.msg-body { flex: 1; padding: 12px 16px 12px 0; min-width: 0; }
+.msg-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.msg-name { font-size: 10px; font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; }
+.msg-row.user .msg-name { color: var(--blue); }
+.msg-row.assistant .msg-name { color: var(--green); }
+.msg-time { font-size: 9px; color: var(--text3); }
+.file-badge { font-size: 9px; background: var(--green-dim); border: 1px solid var(--green); color: var(--green); padding: 1px 6px; border-radius: 3px; }
+.tex-badge { font-size: 9px; background: rgba(167,139,250,0.15); border: 1px solid var(--purple); color: var(--purple); padding: 1px 6px; border-radius: 3px; }
+
+.msg-content { font-size: 13px; line-height: 1.75; color: var(--text); font-family: var(--font-m); }
+.msg-content p { margin-bottom: 8px; }
+.msg-content p:last-child { margin-bottom: 0; }
+.msg-content h1,.msg-content h2,.msg-content h3 { font-family: var(--font-d); color: var(--text); margin: 16px 0 6px; font-weight: 700; }
+.msg-content h1 { font-size: 17px; }
+.msg-content h2 { font-size: 14px; color: var(--amber); }
+.msg-content h3 { font-size: 12px; color: var(--green); letter-spacing: .04em; }
+.msg-content strong { color: var(--amber); font-weight: 600; }
+.msg-content em { color: var(--text2); font-style: italic; }
+.msg-content ul,.msg-content ol { padding-left: 18px; margin-bottom: 8px; }
+.msg-content li { margin-bottom: 3px; color: var(--text2); }
+.msg-content li::marker { color: var(--green); }
+.msg-content a { color: var(--blue); text-decoration: none; }
+.msg-content blockquote { border-left: 2px solid var(--green); padding-left: 10px; color: var(--text2); margin: 8px 0; }
+.msg-content hr { border: none; border-top: 1px solid var(--border2); margin: 14px 0; }
+.msg-content code:not(pre code) { background: var(--bg3); border: 1px solid var(--border2); color: var(--green); padding: 1px 4px; border-radius: 3px; font-size: 11px; }
+.msg-content pre { background: var(--bg3); border: 1px solid var(--border); border-radius: 4px; margin: 10px 0; overflow: hidden; }
+.code-hdr { display: flex; align-items: center; justify-content: space-between; padding: 5px 10px; background: var(--bg4); border-bottom: 1px solid var(--border); }
+.code-lang { font-size: 9px; color: var(--amber); text-transform: uppercase; letter-spacing: .08em; }
+.copy-btn { font-size: 9px; background: transparent; border: 1px solid var(--border2); color: var(--text3); padding: 2px 7px; border-radius: 2px; cursor: pointer; transition: all .15s; }
+.copy-btn:hover,.copy-btn.copied { border-color: var(--green); color: var(--green); }
+.msg-content pre code { display: block; padding: 12px; font-size: 11px; line-height: 1.55; overflow-x: auto; font-family: var(--font-m); background: transparent !important; }
+.msg-content table { width: 100%; border-collapse: collapse; font-size: 11px; margin: 10px 0; }
+.msg-content th { background: var(--bg4); color: var(--amber); padding: 5px 8px; text-align: left; border: 1px solid var(--border2); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.msg-content td { padding: 5px 8px; border: 1px solid var(--border); color: var(--text2); }
+.msg-content tr:nth-child(even) td { background: var(--bg2); }
+
+/* typing indicator */
+#typing-row { display: none; flex; border-bottom: 1px solid var(--border); background: var(--bg); }
+.typing-dots { display: flex; gap: 4px; align-items: center; padding: 16px 16px 16px 0; }
+.typing-dots span { width: 4px; height: 4px; border-radius: 50%; background: var(--green); animation: bn 1.2s ease-in-out infinite; }
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes bn{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+
+/* empty state */
+#empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 14px; padding: 40px 20px; text-align: center; }
+.es-icon { width: 48px; height: 48px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+.es-icon svg { width: 24px; height: 24px; }
+#empty-state h2 { font-family: var(--font-d); font-size: 18px; font-weight: 800; letter-spacing: -.02em; }
+#empty-state p { font-size: 11px; color: var(--text3); line-height: 1.6; max-width: 320px; }
+.qs-grid { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; max-width: 440px; }
+.qs-btn { font-size: 10px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); padding: 6px 10px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; text-align: left; line-height: 1.4; }
+.qs-btn:hover { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+
+/* input */
+#input-area { border-top: 1px solid var(--border); background: var(--bg2); padding: 10px 12px; flex-shrink: 0; }
+.input-wrap { display: flex; gap: 6px; align-items: flex-end; background: var(--bg3); border: 1px solid var(--border2); border-radius: 5px; padding: 6px 6px 6px 12px; transition: border-color .15s; }
+.input-wrap:focus-within { border-color: var(--green); box-shadow: 0 0 0 2px var(--green-glow); }
+#user-input { flex: 1; background: transparent; border: none; outline: none; color: var(--text); font-family: var(--font-m); font-size: 12px; line-height: 1.6; resize: none; max-height: 140px; overflow-y: auto; caret-color: var(--green); }
+#user-input::placeholder { color: var(--text3); }
+#send-btn { width: 28px; height: 28px; flex-shrink: 0; background: var(--green); border: none; border-radius: 3px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all .15s; }
+#send-btn:hover { background: #86efac; transform: scale(1.04); }
+#send-btn:active { transform: scale(.96); }
+#send-btn:disabled { background: var(--border2); cursor: not-allowed; transform: none; }
+#send-btn svg { width: 12px; height: 12px; }
+.input-hint { font-size: 9px; color: var(--text3); margin-top: 4px; text-align: center; letter-spacing: .04em; }
+
+/* ─── RIGHT SIDEBAR ─── */
+#sidebar { width: 340px; flex-shrink: 0; border-left: 1px solid var(--border); display: flex; flex-direction: column; background: var(--bg2); overflow: hidden; }
+#sidebar.hidden { display: none; }
+
+.sidebar-tabs { display: flex; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.s-tab { flex: 1; padding: 8px 4px; font-size: 10px; cursor: pointer; text-align: center; color: var(--text3); border: none; background: transparent; font-family: var(--font-m); letter-spacing: .04em; transition: all .15s; border-bottom: 2px solid transparent; }
+.s-tab:hover { color: var(--text2); }
+.s-tab.active { color: var(--green); border-bottom-color: var(--green); background: var(--bg3); }
+
+/* ─── FILE MANAGER ─── */
+#file-manager { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+#file-manager::-webkit-scrollbar { width: 3px; }
+#file-manager::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.fm-toolbar { display: flex; gap: 6px; padding: 8px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; align-items: center; }
+.fm-toolbar-title { font-size: 10px; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; flex: 1; }
+.fm-btn { font-size: 9px; background: transparent; border: 1px solid var(--border2); color: var(--text3); padding: 3px 8px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; }
+.fm-btn:hover { border-color: var(--green); color: var(--green); }
+.fm-btn.active { border-color: var(--green); color: var(--green); background: var(--green-glow); }
+
+.file-tree { padding: 6px 0; flex: 1; }
+.tree-empty { padding: 24px 16px; text-align: center; color: var(--text3); font-size: 11px; line-height: 1.6; }
+.tree-dir { user-select: none; }
+.tree-dir-label { display: flex; align-items: center; gap: 5px; padding: 4px 10px; cursor: pointer; font-size: 11px; color: var(--text2); transition: background .1s; }
+.tree-dir-label:hover { background: var(--bg3); }
+.tree-dir-label .arrow { font-size: 8px; color: var(--text3); transition: transform .15s; width: 10px; }
+.tree-dir-label.open .arrow { transform: rotate(90deg); }
+.tree-dir-icon { font-size: 11px; }
+.tree-dir-name { font-size: 11px; }
+.tree-children { padding-left: 14px; }
+.tree-file { display: flex; align-items: center; gap: 5px; padding: 3px 10px; cursor: pointer; font-size: 11px; color: var(--text3); transition: all .1s; border-left: 2px solid transparent; }
+.tree-file:hover { background: var(--bg3); color: var(--text2); }
+.tree-file.active { background: var(--bg4); color: var(--green); border-left-color: var(--green); }
+.tree-file-icon { font-size: 10px; flex-shrink: 0; }
+.tree-file-name { flex: 1; font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tree-del { font-size: 9px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 0 2px; opacity: 0; transition: opacity .1s; }
+.tree-file:hover .tree-del { opacity: 1; }
+.tree-del:hover { color: var(--red); }
+
+/* file editor */
+#file-editor { display: none; flex-direction: column; flex: 1; overflow: hidden; }
+#file-editor.visible { display: flex; }
+.fe-header { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.fe-path { font-size: 10px; color: var(--text2); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fe-save { font-size: 9px; background: var(--green-dim); border: 1px solid var(--green); color: var(--green); padding: 3px 8px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; }
+.fe-save:hover { background: rgba(74,222,128,0.2); }
+.fe-close { font-size: 11px; color: var(--text3); background: none; border: none; cursor: pointer; }
+.fe-close:hover { color: var(--red); }
+#file-code { flex: 1; width: 100%; background: var(--bg); border: none; outline: none; color: var(--text); font-family: var(--font-m); font-size: 11px; line-height: 1.6; padding: 10px; resize: none; overflow-y: auto; }
+#file-code::-webkit-scrollbar { width: 3px; }
+#file-code::-webkit-scrollbar-thumb { background: var(--border2); }
+
+/* image preview */
+#img-preview { display: none; flex-direction: column; align-items: center; padding: 16px; gap: 12px; flex: 1; overflow-y: auto; }
+#img-preview.visible { display: flex; }
+.img-canvas-wrap { image-rendering: pixelated; background: repeating-conic-gradient(#1c2330 0% 25%, #151a21 0% 50%) 0 0 / 16px 16px; border: 1px solid var(--border2); border-radius: 3px; }
+#img-preview canvas { image-rendering: pixelated; display: block; }
+.img-info { font-size: 10px; color: var(--text3); text-align: center; }
+
+/* new file form */
+.new-file-form { padding: 8px 10px; border-top: 1px solid var(--border); flex-shrink: 0; display: none; gap: 6px; }
+.new-file-form.visible { display: flex; }
+.new-file-form input { flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 4px 8px; border-radius: 3px; font-family: var(--font-m); font-size: 11px; outline: none; }
+.new-file-form input:focus { border-color: var(--green); }
+.new-file-form button { font-size: 10px; background: var(--green-dim); border: 1px solid var(--green); color: var(--green); padding: 4px 10px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); }
+
+/* ─── TEXTURE STUDIO ─── */
+#texture-studio { flex: 1; overflow-y: auto; display: flex; flex-direction: column; }
+#texture-studio::-webkit-scrollbar { width: 3px; }
+#texture-studio::-webkit-scrollbar-thumb { background: var(--border2); }
+
+.ts-section { padding: 10px; border-bottom: 1px solid var(--border); }
+.ts-label { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 8px; }
+
+/* AI texture gen */
+.ts-gen-row { display: flex; gap: 6px; }
+.ts-gen-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text); padding: 5px 8px; border-radius: 3px; font-family: var(--font-m); font-size: 11px; outline: none; }
+.ts-gen-row input:focus { border-color: var(--purple); }
+.ts-gen-row input::placeholder { color: var(--text3); }
+.ts-gen-btn { font-size: 10px; background: rgba(167,139,250,0.1); border: 1px solid var(--purple); color: var(--purple); padding: 5px 10px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); white-space: nowrap; transition: all .15s; }
+.ts-gen-btn:hover { background: rgba(167,139,250,0.2); }
+.ts-gen-btn:disabled { opacity: .5; cursor: not-allowed; }
+.ts-path-row { display: flex; gap: 6px; margin-bottom: 6px; }
+.ts-path-row input { flex: 1; background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); padding: 4px 8px; border-radius: 3px; font-family: var(--font-m); font-size: 10px; outline: none; }
+.ts-path-row select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); padding: 4px 6px; border-radius: 3px; font-family: var(--font-m); font-size: 10px; outline: none; }
+
+/* pixel editor */
+.pixel-editor-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 10px; }
+#pixel-canvas-container { position: relative; }
+#pixel-canvas { image-rendering: pixelated; cursor: crosshair; border: 1px solid var(--border2); border-radius: 2px; background: repeating-conic-gradient(#1c2330 0% 25%, #151a21 0% 50%) 0 0 / 16px 16px; }
+.pe-palette { display: flex; flex-wrap: wrap; gap: 3px; justify-content: center; max-width: 300px; }
+.pe-color { width: 18px; height: 18px; border-radius: 2px; cursor: pointer; border: 1px solid transparent; transition: all .1s; }
+.pe-color:hover { transform: scale(1.2); z-index: 1; }
+.pe-color.selected { border-color: white; transform: scale(1.15); }
+.pe-tools { display: flex; gap: 4px; }
+.pe-tool { font-size: 10px; background: var(--bg3); border: 1px solid var(--border2); color: var(--text3); padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; }
+.pe-tool:hover { border-color: var(--teal); color: var(--teal); }
+.pe-tool.active { border-color: var(--teal); color: var(--teal); background: rgba(45,212,191,0.1); }
+.pe-size-row { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text3); }
+.pe-size-row select { background: var(--bg3); border: 1px solid var(--border2); color: var(--text2); padding: 3px 6px; border-radius: 3px; font-size: 10px; font-family: var(--font-m); outline: none; }
+.custom-color-wrap { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.custom-color-wrap input[type=color] { width: 24px; height: 24px; border: 1px solid var(--border2); background: none; cursor: pointer; border-radius: 3px; padding: 0; }
+.custom-color-wrap label { font-size: 10px; color: var(--text3); }
+.save-tex-btn { font-size: 10px; background: var(--green-dim); border: 1px solid var(--green); color: var(--green); padding: 5px 12px; border-radius: 3px; cursor: pointer; font-family: var(--font-m); transition: all .15s; width: 100%; text-align: center; }
+.save-tex-btn:hover { background: rgba(74,222,128,.2); }
+.tex-preview-list { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; }
+.tex-preview-item { display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; }
+.tex-preview-item canvas { image-rendering: pixelated; border: 1px solid var(--border2); border-radius: 2px; }
+.tex-preview-item canvas:hover { border-color: var(--green); }
+.tex-preview-item span { font-size: 9px; color: var(--text3); max-width: 60px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* download bar */
+.download-bar { padding: 10px; border-top: 1px solid var(--border); flex-shrink: 0; background: var(--bg2); }
+.dl-btn { width: 100%; padding: 8px; background: var(--green-dim); border: 1px solid var(--green); color: var(--green); font-family: var(--font-d); font-weight: 700; font-size: 12px; border-radius: 4px; cursor: pointer; letter-spacing: .04em; transition: all .15s; }
+.dl-btn:hover { background: rgba(74,222,128,.2); box-shadow: 0 0 12px var(--green-glow); }
+.dl-btn:disabled { opacity: .5; cursor: not-allowed; }
+
+/* toast */
+#toast { display: none; position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: var(--bg4); border: 1px solid var(--border3); color: var(--text2); font-size: 11px; padding: 7px 14px; border-radius: 4px; font-family: var(--font-m); z-index: 100; max-width: 90vw; text-align: center; }
+#toast.error { border-color: var(--red); color: var(--red); }
+#toast.success { border-color: var(--green); color: var(--green); }
+
+/* sidebar toggle */
+#sidebar-toggle { display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <svg viewBox="0 0 16 16" fill="none"><rect x="1" y="1" width="6" height="6" rx="1" fill="#0a0c0f"/><rect x="9" y="1" width="6" height="6" rx="1" fill="#0a0c0f"/><rect x="1" y="9" width="6" height="6" rx="1" fill="#0a0c0f"/><rect x="9" y="9" width="6" height="6" rx="1" fill="#0a0c0f" opacity=".4"/></svg>
+  </div>
+  <div>
+    <div class="hd-title">MC Addon Builder</div>
+    <div class="hd-sub">BEDROCK 1.21 · GROQ · AI-POWERED</div>
+  </div>
+  <div class="hd-right">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-label" style="font-size:10px;color:var(--text3)">ready</span>
+    <div class="badge">llama-3.3-70b</div>
+    <input type="text" id="addon-name-input" value="MyAddon" placeholder="Addon name...">
+    <button class="hd-btn" onclick="exportCode()">export code</button>
+    <button class="hd-btn danger" onclick="clearChat()">clear</button>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab active" onclick="switchPanel('chat')" id="tab-chat">
+    💬 Chat
+    <span class="tab-count" id="msg-count">0</span>
+  </button>
+  <button class="tab" onclick="switchPanel('files')" id="tab-files">
+    📁 Files
+    <span class="tab-count" id="file-count">0</span>
+  </button>
+  <button class="tab" onclick="switchPanel('textures')" id="tab-textures">
+    🎨 Textures
+    <span class="tab-count" id="tex-count">0</span>
+  </button>
+</div>
+
+<div class="main">
+
+  <!-- CHAT PANEL -->
+  <div id="chat-panel">
+    <div id="messages">
+      <div id="empty-state">
+        <div class="es-icon">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".9"/><rect x="13" y="1" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".5"/><rect x="1" y="13" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".5"/><rect x="13" y="13" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".2"/></svg>
+        </div>
+        <h2>What addon are we building?</h2>
+        <p>Describe your idea — I'll generate the files, textures, and package automatically.</p>
+        <div class="qs-grid">
+          <button class="qs-btn" onclick="qs('I want an AI horror mob that stalks players — uses Groq for decision-making')">Horror AI stalker mob</button>
+          <button class="qs-btn" onclick="qs('Build a faction war addon with AI commanders powered by Groq')">Faction war AI commanders</button>
+          <button class="qs-btn" onclick="qs('AI villagers that negotiate prices dynamically using Groq')">Dynamic AI traders</button>
+          <button class="qs-btn" onclick="qs('Boss fight where the AI adapts to the player fighting style using Groq')">Adaptive boss AI</button>
+          <button class="qs-btn" onclick="qs('Custom dimension with AI NPCs that have memory and personality')">AI NPCs with memory</button>
+          <button class="qs-btn" onclick="qs('How does the Groq bridge server connect to Minecraft Bedrock? Give me the full architecture.')">Explain Groq bridge</button>
+        </div>
+      </div>
+      <div id="typing-row" class="msg-row assistant">
+        <div class="msg-gutter"><div class="msg-av">AI</div></div>
+        <div class="typing-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>
+    <div id="input-area">
+      <div class="input-wrap">
+        <textarea id="user-input" rows="1" placeholder="Describe your addon, ask questions, or request changes..."></textarea>
+        <button id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 12 12" fill="none"><path d="M1 6h10M5.5 1l5 5-5 5" stroke="#0a0c0f" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div class="input-hint">enter to send · shift+enter for new line · AI generates real files automatically</div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-tabs">
+      <button class="s-tab active" id="s-tab-fm" onclick="switchSidebarTab('fm')">File Manager</button>
+      <button class="s-tab" id="s-tab-ed" onclick="switchSidebarTab('ed')">Editor</button>
+    </div>
+
+    <!-- FILE MANAGER -->
+    <div id="file-manager">
+      <div class="fm-toolbar">
+        <span class="fm-toolbar-title">workspace</span>
+        <button class="fm-btn" onclick="toggleNewFileForm()">+ file</button>
+        <button class="fm-btn" onclick="refreshFileTree()">↻</button>
+      </div>
+      <div class="file-tree" id="file-tree">
+        <div class="tree-empty">No files yet.<br>Chat with the AI to generate addon files automatically.</div>
+      </div>
+      <div class="new-file-form" id="new-file-form">
+        <input type="text" id="new-file-path" placeholder="path/to/file.json" />
+        <button onclick="createNewFile()">create</button>
+      </div>
+    </div>
+
+    <!-- EDITOR (hidden until file selected) -->
+    <div id="file-editor">
+      <div class="fe-header">
+        <span class="fe-path" id="fe-path">no file open</span>
+        <button class="fe-save" onclick="saveCurrentFile()">save</button>
+        <button class="fe-close" onclick="closeEditor()">✕</button>
+      </div>
+      <textarea id="file-code" spellcheck="false"></textarea>
+    </div>
+
+    <!-- IMAGE PREVIEW (shown for .png files) -->
+    <div id="img-preview">
+      <div class="img-canvas-wrap">
+        <canvas id="preview-canvas"></canvas>
+      </div>
+      <div class="img-info" id="img-info">–</div>
+      <button class="fe-save" onclick="openInTextureStudio()" style="font-size:10px;padding:4px 10px;">open in texture studio</button>
+      <button class="fe-close" onclick="closeEditor()" style="align-self:center;background:none;border:1px solid var(--border2);color:var(--text3);padding:3px 8px;border-radius:3px;cursor:pointer;font-size:10px;font-family:var(--font-m);">close</button>
+    </div>
+
+    <div class="download-bar">
+      <button class="dl-btn" onclick="packageAddon()" id="dl-btn">⬇ Download .mcaddon</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- TEXTURE STUDIO (full panel, shown when textures tab active) -->
+<div id="texture-studio-panel" style="display:none; flex:1; overflow:hidden; flex-direction:column;">
+  <div style="display:flex; overflow:hidden; flex:1;">
+
+    <!-- Left: AI gen + pixel editor -->
+    <div style="flex:1; overflow-y:auto; border-right:1px solid var(--border);">
+      <div class="ts-section">
+        <div class="ts-label">AI Texture Generator</div>
+        <div class="ts-path-row">
+          <input type="text" id="tex-path" placeholder="textures/entity/mob.png" value="textures/entity/mob.png">
+          <select id="tex-size">
+            <option value="16">16×16</option>
+            <option value="32">32×32</option>
+            <option value="64">64×64</option>
+          </select>
+        </div>
+        <div class="ts-gen-row">
+          <input type="text" id="tex-desc" placeholder="Describe the texture... e.g. stone golem, glowing runes, top-left lighting">
+          <button class="ts-gen-btn" id="ts-gen-btn" onclick="generateTexture()">Generate</button>
+        </div>
+      </div>
+
+      <div class="ts-section">
+        <div class="ts-label">Pixel Art Editor</div>
+        <div class="pixel-editor-wrap">
+          <div class="pe-size-row">
+            <label>Canvas:</label>
+            <select id="pe-size" onchange="resizeCanvas()">
+              <option value="16">16×16</option>
+              <option value="32">32×32</option>
+            </select>
+            <label>Zoom:</label>
+            <select id="pe-zoom" onchange="updateZoom()">
+              <option value="12">12×</option>
+              <option value="16" selected>16×</option>
+              <option value="20">20×</option>
+              <option value="24">24×</option>
+            </select>
+          </div>
+          <div class="pe-tools">
+            <button class="pe-tool active" id="tool-pencil" onclick="setTool('pencil')">✏ pencil</button>
+            <button class="pe-tool" id="tool-eraser" onclick="setTool('eraser')">⬜ eraser</button>
+            <button class="pe-tool" id="tool-fill" onclick="setTool('fill')">🪣 fill</button>
+            <button class="pe-tool" id="tool-eyedrop" onclick="setTool('eyedrop')">💉 pick</button>
+          </div>
+          <canvas id="pixel-canvas"></canvas>
+          <div class="pe-palette" id="pe-palette"></div>
+          <div class="custom-color-wrap">
+            <input type="color" id="custom-color" value="#4ade80" onchange="addCustomColor()">
+            <label>custom color</label>
+          </div>
+          <div class="ts-path-row" style="width:100%">
+            <input type="text" id="pe-save-path" placeholder="textures/entity/mob.png" style="flex:1">
+          </div>
+          <button class="save-tex-btn" onclick="savePixelArt()">Save to workspace</button>
+          <button class="save-tex-btn" style="background:var(--bg4);border-color:var(--border3);color:var(--text3);margin-top:4px;" onclick="clearCanvas()">Clear canvas</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: texture list -->
+    <div style="width:200px; flex-shrink:0; overflow-y:auto; display:flex; flex-direction:column;">
+      <div style="padding:8px 10px; border-bottom:1px solid var(--border); font-size:9px; color:var(--text3); text-transform:uppercase; letter-spacing:.07em;">Textures in workspace</div>
+      <div class="tex-preview-list" id="tex-preview-list">
+        <div style="padding:16px;text-align:center;color:var(--text3);font-size:10px;width:100%">No textures yet.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ─── STATE ───
+let conversationHistory = [];
+let workspaceId = null;
+let isLoading = false;
+let currentFile = null;
+let messageCount = 0;
+let fileCount = 0;
+let texCount = 0;
+
+// Pixel editor state
+let pePixels = [];
+let peSize = 16;
+let peZoom = 16;
+let peTool = 'pencil';
+let peColor = { r: 74, g: 222, b: 128, a: 255 };
+let peDrawing = false;
+let peLastPos = null;
+
+const MC_PALETTE = [
+  '#4ade80','#22c55e','#15803d',
+  '#60a5fa','#3b82f6','#1d4ed8',
+  '#f87171','#ef4444','#b91c1c',
+  '#fbbf24','#f59e0b','#d97706',
+  '#a78bfa','#8b5cf6','#7c3aed',
+  '#2dd4bf','#14b8a6','#0d9488',
+  '#ffffff','#e2e8f0','#94a3b8',
+  '#475569','#1e2835','#0a0c0f',
+  '#c8c8c8','#888888','#444444',
+  '#b5892a','#8b6914','#f0d030',
+  '#7c2424','#c00000','#ff2020',
+  '#0d0b18','#30d8f0','#00c040',
+];
+
+// ─── MARKED CONFIG ───
+marked.setOptions({ breaks: true, gfm: true });
+const renderer = new marked.Renderer();
+renderer.code = function(code, lang) {
+  const l = lang || 'text';
+  let hi;
+  try {
+    hi = lang && hljs.getLanguage(lang) ? hljs.highlight(code, { language: lang }).value : hljs.highlightAuto(code).value;
+  } catch(e) { hi = code.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+  const id = 'cb-' + Math.random().toString(36).slice(2,8);
+  return `<pre><div class="code-hdr"><span class="code-lang">${l}</span><button class="copy-btn" onclick="copyCode(this,${JSON.stringify(code)})">copy</button></div><code class="hljs language-${l}">${hi}</code></pre>`;
+};
+marked.use({ renderer });
+
+function copyCode(btn, code) {
+  navigator.clipboard.writeText(code).then(() => { btn.textContent = 'copied!'; btn.classList.add('copied'); setTimeout(()=>{ btn.textContent='copy';btn.classList.remove('copied');},2000); });
+}
+
+function getTime() {
+  return new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:false});
+}
+
+function showToast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = type; t.style.display = 'block';
+  setTimeout(()=>{ t.style.display='none'; }, 4000);
+}
+
+function setStatus(state) {
+  const dot = document.getElementById('status-dot');
+  const lbl = document.getElementById('status-label');
+  if (state === 'thinking') {
+    dot.style.background='#fbbf24'; dot.style.boxShadow='0 0 5px #fbbf24'; lbl.textContent='thinking...';
+  } else {
+    dot.style.background='#4ade80'; dot.style.boxShadow='0 0 5px #4ade80'; lbl.textContent='ready';
+  }
+}
+
+// ─── PANEL SWITCHING ───
+function switchPanel(p) {
+  document.getElementById('chat-panel').style.display = p === 'chat' ? 'flex' : 'none';
+  document.getElementById('sidebar').style.display = p === 'files' ? 'flex' : 'none';
+  document.getElementById('texture-studio-panel').style.display = p === 'textures' ? 'flex' : 'none';
+  ['chat','files','textures'].forEach(id => {
+    document.getElementById('tab-'+id).classList.toggle('active', id === p);
+  });
+  if (p === 'files' && workspaceId) refreshFileTree();
+  if (p === 'textures' && workspaceId) refreshTextureList();
+}
+
+function switchSidebarTab(tab) {
+  document.getElementById('s-tab-fm').classList.toggle('active', tab==='fm');
+  document.getElementById('s-tab-ed').classList.toggle('active', tab==='ed');
+  document.getElementById('file-manager').style.display = tab==='fm' ? 'flex' : 'none';
+  const ed = document.getElementById('file-editor');
+  const ip = document.getElementById('img-preview');
+  if (tab === 'ed' && currentFile) {
+    if (currentFile.isImage) { ed.classList.remove('visible'); ip.classList.add('visible'); }
+    else { ed.classList.add('visible'); ip.classList.remove('visible'); }
+  } else if (tab !== 'ed') {
+    ed.classList.remove('visible'); ip.classList.remove('visible');
+  }
+}
+
+// ─── CHAT ───
+async function sendMessage() {
+  const text = document.getElementById('user-input').value.trim();
+  if (!text || isLoading) return;
+
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  document.getElementById('user-input').value = '';
+  document.getElementById('user-input').style.height = 'auto';
+  setStatus('thinking');
+
+  const es = document.getElementById('empty-state');
+  if (es) es.remove();
+
+  appendMessage('user', text, null, []);
+  conversationHistory.push({ role: 'user', content: text });
+  messageCount++;
+  document.getElementById('msg-count').textContent = messageCount;
+
+  showTyping(true);
+
+  try {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: conversationHistory, workspaceId })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({error:'Unknown error'}));
+      throw new Error(err.error || `Server error ${res.status}`);
+    }
+
+    const data = await res.json();
+    workspaceId = data.workspaceId;
+
+    conversationHistory.push({ role: 'assistant', content: data.content });
+    showTyping(false);
+
+    const totalFiles = (data.writtenFiles||[]).length + (data.generatedTextures||[]).length;
+    appendMessage('assistant', data.content, data.writtenFiles||[], data.generatedTextures||[]);
+    messageCount++;
+    document.getElementById('msg-count').textContent = messageCount;
+
+    if (totalFiles > 0) {
+      fileCount += (data.writtenFiles||[]).length;
+      texCount += (data.generatedTextures||[]).length;
+      document.getElementById('file-count').textContent = fileCount;
+      document.getElementById('tex-count').textContent = texCount;
+      showToast(`✓ ${totalFiles} file(s) written to workspace`, 'success');
+      refreshFileTree();
+      refreshTextureList();
+    }
+
+  } catch(err) {
+    showTyping(false);
+    showToast(err.message, 'error');
+    conversationHistory.pop();
+  }
+
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+  setStatus('ready');
+  document.getElementById('user-input').focus();
+}
+
+function appendMessage(role, content, writtenFiles, generatedTextures) {
+  const messages = document.getElementById('messages');
+  const typingRow = document.getElementById('typing-row');
+
+  const row = document.createElement('div');
+  row.className = `msg-row ${role}`;
+
+  const gutter = document.createElement('div');
+  gutter.className = 'msg-gutter';
+  const av = document.createElement('div');
+  av.className = 'msg-av';
+  av.textContent = role === 'user' ? 'ME' : 'AI';
+  gutter.appendChild(av);
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const meta = document.createElement('div');
+  meta.className = 'msg-meta';
+  const name = document.createElement('span');
+  name.className = 'msg-name';
+  name.textContent = role === 'user' ? 'you' : 'addon-ai';
+  const time = document.createElement('span');
+  time.className = 'msg-time';
+  time.textContent = getTime();
+  meta.appendChild(name);
+  meta.appendChild(time);
+
+  if (writtenFiles && writtenFiles.length > 0) {
+    const fb = document.createElement('span');
+    fb.className = 'file-badge';
+    fb.textContent = `+${writtenFiles.length} file${writtenFiles.length>1?'s':''}`;
+    meta.appendChild(fb);
+  }
+  if (generatedTextures && generatedTextures.length > 0) {
+    const tb = document.createElement('span');
+    tb.className = 'tex-badge';
+    tb.textContent = `+${generatedTextures.length} texture${generatedTextures.length>1?'s':''}`;
+    meta.appendChild(tb);
+  }
+
+  const contentEl = document.createElement('div');
+  contentEl.className = 'msg-content';
+
+  // Strip <<<FILE:>>> and <<<TEXTURE:>>> blocks from displayed content
+  let displayContent = content
+    .replace(/<<<FILE:[^>]+>>>\n[\s\S]*?<<<END_FILE>>>/g, '')
+    .replace(/<<<TEXTURE:[^>]+>>>/g, '')
+    .trim();
+
+  if (role === 'assistant') {
+    contentEl.innerHTML = marked.parse(displayContent);
+  } else {
+    const p = document.createElement('p');
+    p.textContent = content;
+    contentEl.appendChild(p);
+  }
+
+  body.appendChild(meta);
+  body.appendChild(contentEl);
+  row.appendChild(gutter);
+  row.appendChild(body);
+  messages.insertBefore(row, typingRow);
+  messages.scrollTop = messages.scrollHeight;
+}
+
+function showTyping(show) {
+  const tr = document.getElementById('typing-row');
+  tr.style.display = show ? 'flex' : 'none';
+  if (show) document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+}
+
+function qs(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function clearChat() {
+  conversationHistory = []; messageCount = 0;
+  document.getElementById('msg-count').textContent = '0';
+  document.getElementById('messages').innerHTML = '';
+  const es = document.createElement('div');
+  es.id = 'empty-state';
+  es.innerHTML = `<div class="es-icon"><svg viewBox="0 0 24 24" fill="none"><rect x="1" y="1" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".9"/><rect x="13" y="1" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".5"/><rect x="1" y="13" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".5"/><rect x="13" y="13" width="10" height="10" rx="1.5" fill="#4ade80" opacity=".2"/></svg></div><h2>What addon are we building?</h2><p>Describe your idea — I'll generate the files, textures, and package automatically.</p><div class="qs-grid"><button class="qs-btn" onclick="qs('I want an AI horror mob that stalks players — uses Groq for decision-making')">Horror AI stalker mob</button><button class="qs-btn" onclick="qs('Build a faction war addon with AI commanders powered by Groq')">Faction war AI commanders</button><button class="qs-btn" onclick="qs('AI villagers that negotiate prices dynamically using Groq')">Dynamic AI traders</button><button class="qs-btn" onclick="qs('Boss fight where the AI adapts to the player fighting style using Groq')">Adaptive boss AI</button></div>`;
+  const typingRow = document.createElement('div');
+  typingRow.id = 'typing-row'; typingRow.className = 'msg-row assistant'; typingRow.style.display = 'none';
+  typingRow.innerHTML = '<div class="msg-gutter"><div class="msg-av">AI</div></div><div class="typing-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('messages').appendChild(es);
+  document.getElementById('messages').appendChild(typingRow);
+}
+
+// ─── FILE MANAGER ───
+async function refreshFileTree() {
+  if (!workspaceId) return;
+  try {
+    const res = await fetch(`/api/files/${workspaceId}`);
+    const data = await res.json();
+    renderFileTree(data.tree || []);
+    // Update file count
+    const countFiles = (tree) => tree.reduce((acc, n) => acc + (n.type==='file'?1:countFiles(n.children||[])), 0);
+    fileCount = countFiles(data.tree || []);
+    document.getElementById('file-count').textContent = fileCount;
+  } catch(err) {
+    console.error('File tree error:', err);
+  }
+}
+
+function getFileIcon(name) {
+  const ext = name.split('.').pop().toLowerCase();
+  if (ext === 'json') return '{ }';
+  if (ext === 'js') return 'JS';
+  if (ext === 'png' || ext === 'jpg') return '🖼';
+  if (ext === 'mcfunction') return 'fn';
+  if (ext === 'lang') return 'TT';
+  if (ext === 'ogg' || ext === 'wav') return '♪';
+  return '—';
+}
+
+function renderFileTree(tree) {
+  const container = document.getElementById('file-tree');
+  if (!tree || tree.length === 0) {
+    container.innerHTML = '<div class="tree-empty">No files yet.<br>Chat with the AI to generate addon files.</div>';
+    return;
+  }
+  container.innerHTML = '';
+  function renderNode(node, parent) {
+    if (node.type === 'dir') {
+      const div = document.createElement('div');
+      div.className = 'tree-dir';
+      const label = document.createElement('div');
+      label.className = 'tree-dir-label open';
+      label.innerHTML = `<span class="arrow">▶</span><span class="tree-dir-icon">📁</span><span class="tree-dir-name">${node.name}</span>`;
+      const children = document.createElement('div');
+      children.className = 'tree-children';
+      label.onclick = () => {
+        label.classList.toggle('open');
+        children.style.display = children.style.display === 'none' ? '' : 'none';
+      };
+      (node.children||[]).forEach(c => renderNode(c, children));
+      div.appendChild(label);
+      div.appendChild(children);
+      parent.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'tree-file';
+      div.dataset.path = node.path;
+      div.innerHTML = `<span class="tree-file-icon">${getFileIcon(node.name)}</span><span class="tree-file-name" title="${node.path}">${node.name}</span><button class="tree-del" onclick="deleteFile(event,'${node.path}')">✕</button>`;
+      div.onclick = (e) => { if (!e.target.classList.contains('tree-del')) openFile(node.path); };
+      parent.appendChild(div);
+    }
+  }
+  tree.forEach(n => renderNode(n, container));
+}
+
+async function openFile(filePath) {
+  if (!workspaceId) return;
+
+  // Mark active
+  document.querySelectorAll('.tree-file').forEach(el => el.classList.toggle('active', el.dataset.path === filePath));
+
+  try {
+    const res = await fetch(`/api/files/${workspaceId}/read?filePath=${encodeURIComponent(filePath)}`);
+    const data = await res.json();
+    currentFile = { path: filePath, ...data };
+
+    const ed = document.getElementById('file-editor');
+    const ip = document.getElementById('img-preview');
+
+    if (data.isImage) {
+      ed.classList.remove('visible');
+      ip.classList.add('visible');
+      // Draw image on canvas
+      const canvas = document.getElementById('preview-canvas');
+      const img = new Image();
+      img.onload = () => {
+        const scale = Math.min(160 / img.width, 160 / img.height);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        document.getElementById('img-info').textContent = `${img.width}×${img.height}px · ${filePath.split('/').pop()}`;
+      };
+      img.src = `data:image/png;base64,${data.content}`;
+    } else {
+      ip.classList.remove('visible');
+      ed.classList.add('visible');
+      document.getElementById('file-code').value = data.content;
+      document.getElementById('fe-path').textContent = filePath;
+    }
+
+    switchSidebarTab('ed');
+    if (document.getElementById('s-tab-fm').classList.contains('active') || true) {
+      // Show sidebar if not visible
+      document.getElementById('sidebar').style.display = 'flex';
+    }
+  } catch(err) {
+    showToast('Could not open file: ' + err.message, 'error');
+  }
+}
+
+function closeEditor() {
+  currentFile = null;
+  document.getElementById('file-editor').classList.remove('visible');
+  document.getElementById('img-preview').classList.remove('visible');
+  document.querySelectorAll('.tree-file').forEach(el => el.classList.remove('active'));
+  switchSidebarTab('fm');
+}
+
+async function saveCurrentFile() {
+  if (!workspaceId || !currentFile || currentFile.isImage) return;
+  const content = document.getElementById('file-code').value;
+  try {
+    const res = await fetch(`/api/files/${workspaceId}/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath: currentFile.path, content })
+    });
+    const data = await res.json();
+    if (data.success) showToast('File saved', 'success');
+    else showToast('Save failed', 'error');
+  } catch(err) {
+    showToast('Save error: ' + err.message, 'error');
+  }
+}
+
+async function deleteFile(event, filePath) {
+  event.stopPropagation();
+  if (!workspaceId) return;
+  try {
+    await fetch(`/api/files/${workspaceId}/delete?filePath=${encodeURIComponent(filePath)}`, { method: 'DELETE' });
+    showToast('Deleted: ' + filePath, 'success');
+    if (currentFile && currentFile.path === filePath) closeEditor();
+    refreshFileTree();
+    refreshTextureList();
+  } catch(err) {
+    showToast('Delete error: ' + err.message, 'error');
+  }
+}
+
+function toggleNewFileForm() {
+  const form = document.getElementById('new-file-form');
+  form.classList.toggle('visible');
+  if (form.classList.contains('visible')) document.getElementById('new-file-path').focus();
+}
+
+async function createNewFile() {
+  const filePath = document.getElementById('new-file-path').value.trim();
+  if (!filePath || !workspaceId) return;
+  try {
+    const res = await fetch(`/api/files/${workspaceId}/write`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filePath, content: '' })
+    });
+    const data = await res.json();
+    if (data.success) {
+      document.getElementById('new-file-path').value = '';
+      document.getElementById('new-file-form').classList.remove('visible');
+      showToast('Created: ' + filePath, 'success');
+      await refreshFileTree();
+      openFile(filePath);
+    }
+  } catch(err) {
+    showToast('Create error: ' + err.message, 'error');
+  }
+}
+
+function openInTextureStudio() {
+  if (!currentFile || !currentFile.isImage) return;
+  // Load into pixel editor
+  document.getElementById('pe-save-path').value = currentFile.path;
+  const img = new Image();
+  img.onload = () => {
+    const size = img.width;
+    peSize = size;
+    document.getElementById('pe-size').value = size <= 16 ? '16' : '32';
+    initCanvas(size);
+    const canvas = document.getElementById('pixel-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, size, size);
+    // Read pixels back
+    const imageData = ctx.getImageData(0, 0, size, size);
+    pePixels = [];
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      pePixels.push({ r: imageData.data[i], g: imageData.data[i+1], b: imageData.data[i+2], a: imageData.data[i+3] });
+    }
+    renderPixelCanvas();
+  };
+  img.src = `data:image/png;base64,${currentFile.content}`;
+  switchPanel('textures');
+}
+
+// ─── TEXTURE STUDIO ───
+async function generateTexture() {
+  if (!workspaceId) {
+    // Create workspace first
+    const res = await fetch('/api/workspace/new', { method: 'POST' });
+    const data = await res.json();
+    workspaceId = data.workspaceId;
+  }
+
+  const desc = document.getElementById('tex-desc').value.trim();
+  const filePath = document.getElementById('tex-path').value.trim();
+  const size = parseInt(document.getElementById('tex-size').value);
+
+  if (!desc || !filePath) { showToast('Enter a description and file path', 'error'); return; }
+
+  const btn = document.getElementById('ts-gen-btn');
+  btn.disabled = true; btn.textContent = 'Generating...';
+
+  try {
+    const res = await fetch('/api/texture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId, filePath, description: desc, size })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    showToast('Texture generated: ' + filePath, 'success');
+    texCount++;
+    document.getElementById('tex-count').textContent = texCount;
+    refreshTextureList();
+    refreshFileTree();
+
+    // Load into pixel editor
+    document.getElementById('pe-save-path').value = filePath;
+    const img = new Image();
+    img.onload = () => {
+      initCanvas(size);
+      const canvas = document.getElementById('pixel-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(img, 0, 0, size, size);
+      const imageData = ctx.getImageData(0, 0, size, size);
+      pePixels = [];
+      for (let i = 0; i < imageData.data.length; i += 4) {
+        pePixels.push({ r: imageData.data[i], g: imageData.data[i+1], b: imageData.data[i+2], a: imageData.data[i+3] });
+      }
+      renderPixelCanvas();
+    };
+    img.src = `data:image/png;base64,${data.base64}`;
+
+  } catch(err) {
+    showToast('Texture error: ' + err.message, 'error');
+  }
+
+  btn.disabled = false; btn.textContent = 'Generate';
+}
+
+async function refreshTextureList() {
+  if (!workspaceId) return;
+  const container = document.getElementById('tex-preview-list');
+  try {
+    const res = await fetch(`/api/files/${workspaceId}`);
+    const data = await res.json();
+    const textures = [];
+    function findTextures(tree) {
+      if (!tree) return;
+      for (const node of tree) {
+        if (node.type === 'file' && (node.path.endsWith('.png')||node.path.endsWith('.jpg'))) {
+          textures.push(node);
+        } else if (node.type === 'dir') {
+          findTextures(node.children);
+        }
+      }
+    }
+    findTextures(data.tree || []);
+    texCount = textures.length;
+    document.getElementById('tex-count').textContent = texCount;
+
+    if (textures.length === 0) {
+      container.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);font-size:10px;width:100%">No textures yet.<br>Generate one above.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    for (const tex of textures) {
+      const fr = await fetch(`/api/files/${workspaceId}/read?filePath=${encodeURIComponent(tex.path)}`);
+      const fd = await fr.json();
+      if (!fd.isImage) continue;
+      const item = document.createElement('div');
+      item.className = 'tex-preview-item';
+      const canvas = document.createElement('canvas');
+      canvas.width = 48; canvas.height = 48;
+      const img = new Image();
+      img.onload = () => {
+        const ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(img, 0, 0, 48, 48);
+      };
+      img.src = `data:image/png;base64,${fd.content}`;
+      canvas.onclick = () => {
+        document.getElementById('pe-save-path').value = tex.path;
+        document.getElementById('tex-path').value = tex.path;
+        openInTexListItem(tex.path, fd.content);
+      };
+      const label = document.createElement('span');
+      label.textContent = tex.name;
+      item.appendChild(canvas);
+      item.appendChild(label);
+      container.appendChild(item);
+    }
+  } catch(err) {
+    console.error('Texture list error:', err);
+  }
+}
+
+function openInTexListItem(filePath, base64) {
+  const img = new Image();
+  img.onload = () => {
+    const size = img.width;
+    peSize = size;
+    initCanvas(size);
+    const canvas = document.getElementById('pixel-canvas');
+    const ctx = canvas.getContext('2d');
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, 0, 0, size, size);
+    const imageData = ctx.getImageData(0, 0, size, size);
+    pePixels = [];
+    for (let i = 0; i < imageData.data.length; i += 4) {
+      pePixels.push({ r: imageData.data[i], g: imageData.data[i+1], b: imageData.data[i+2], a: imageData.data[i+3] });
+    }
+    renderPixelCanvas();
+  };
+  img.src = `data:image/png;base64,${base64}`;
+}
+
+// ─── PIXEL EDITOR ───
+function initPalette() {
+  const container = document.getElementById('pe-palette');
+  container.innerHTML = '';
+  MC_PALETTE.forEach((hex, i) => {
+    const div = document.createElement('div');
+    div.className = 'pe-color' + (i === 0 ? ' selected' : '');
+    div.style.background = hex;
+    div.dataset.hex = hex;
+    div.onclick = () => selectColor(hex, div);
+    container.appendChild(div);
+  });
+}
+
+function addCustomColor() {
+  const hex = document.getElementById('custom-color').value;
+  selectColorHex(hex);
+}
+
+function hexToRgba(hex) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return { r, g, b, a: 255 };
+}
+
+function selectColor(hex, el) {
+  peColor = hexToRgba(hex);
+  document.querySelectorAll('.pe-color').forEach(c => c.classList.remove('selected'));
+  if (el) el.classList.add('selected');
+}
+
+function selectColorHex(hex) {
+  peColor = hexToRgba(hex);
+  document.querySelectorAll('.pe-color').forEach(c => c.classList.remove('selected'));
+}
+
+function setTool(tool) {
+  peTool = tool;
+  document.querySelectorAll('.pe-tool').forEach(b => b.classList.remove('active'));
+  document.getElementById('tool-' + tool).classList.add('active');
+}
+
+function initCanvas(size) {
+  peSize = size;
+  pePixels = new Array(size * size).fill(null).map(() => ({ r: 0, g: 0, b: 0, a: 0 }));
+  renderPixelCanvas();
+}
+
+function resizeCanvas() {
+  const size = parseInt(document.getElementById('pe-size').value);
+  initCanvas(size);
+}
+
+function updateZoom() {
+  peZoom = parseInt(document.getElementById('pe-zoom').value);
+  renderPixelCanvas();
+}
+
+function renderPixelCanvas() {
+  const canvas = document.getElementById('pixel-canvas');
+  const zoom = peZoom;
+  canvas.width = peSize * zoom;
+  canvas.height = peSize * zoom;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingEnabled = false;
+
+  // Draw pixels
+  for (let y = 0; y < peSize; y++) {
+    for (let x = 0; x < peSize; x++) {
+      const px = pePixels[y * peSize + x];
+      if (px && px.a > 0) {
+        ctx.fillStyle = `rgba(${px.r},${px.g},${px.b},${px.a/255})`;
+        ctx.fillRect(x * zoom, y * zoom, zoom, zoom);
+      }
+    }
+  }
+
+  // Grid (only at reasonable zoom)
+  if (zoom >= 8) {
+    ctx.strokeStyle = 'rgba(30,40,53,0.6)';
+    ctx.lineWidth = 0.5;
+    for (let x = 0; x <= peSize; x++) {
+      ctx.beginPath(); ctx.moveTo(x * zoom, 0); ctx.lineTo(x * zoom, peSize * zoom); ctx.stroke();
+    }
+    for (let y = 0; y <= peSize; y++) {
+      ctx.beginPath(); ctx.moveTo(0, y * zoom); ctx.lineTo(peSize * zoom, y * zoom); ctx.stroke();
+    }
+  }
+}
+
+function getCanvasPixelPos(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  const zoom = peZoom;
+  const x = Math.floor((e.clientX - rect.left) / zoom);
+  const y = Math.floor((e.clientY - rect.top) / zoom);
+  return { x: Math.max(0, Math.min(x, peSize-1)), y: Math.max(0, Math.min(y, peSize-1)) };
+}
+
+function paintPixel(x, y) {
+  const idx = y * peSize + x;
+  if (peTool === 'pencil') {
+    pePixels[idx] = { ...peColor };
+  } else if (peTool === 'eraser') {
+    pePixels[idx] = { r: 0, g: 0, b: 0, a: 0 };
+  } else if (peTool === 'eyedrop') {
+    const px = pePixels[idx];
+    if (px) peColor = { ...px };
+  }
+  renderPixelCanvas();
+}
+
+function floodFill(x, y, targetColor, fillColor) {
+  if (x < 0 || x >= peSize || y < 0 || y >= peSize) return;
+  const idx = y * peSize + x;
+  const px = pePixels[idx];
+  if (!px) return;
+  if (px.r === fillColor.r && px.g === fillColor.g && px.b === fillColor.b && px.a === fillColor.a) return;
+  if (px.r !== targetColor.r || px.g !== targetColor.g || px.b !== targetColor.b || px.a !== targetColor.a) return;
+  pePixels[idx] = { ...fillColor };
+  floodFill(x+1, y, targetColor, fillColor);
+  floodFill(x-1, y, targetColor, fillColor);
+  floodFill(x, y+1, targetColor, fillColor);
+  floodFill(x, y-1, targetColor, fillColor);
+}
+
+// Canvas events
+document.addEventListener('DOMContentLoaded', () => {
+  initPalette();
+  initCanvas(16);
+
+  const canvas = document.getElementById('pixel-canvas');
+
+  canvas.addEventListener('mousedown', (e) => {
+    peDrawing = true;
+    const pos = getCanvasPixelPos(canvas, e);
+    if (peTool === 'fill') {
+      const target = { ...pePixels[pos.y * peSize + pos.x] };
+      floodFill(pos.x, pos.y, target, { ...peColor });
+      renderPixelCanvas();
+    } else {
+      paintPixel(pos.x, pos.y);
+      peLastPos = pos;
+    }
+  });
+
+  canvas.addEventListener('mousemove', (e) => {
+    if (!peDrawing || peTool === 'fill' || peTool === 'eyedrop') return;
+    const pos = getCanvasPixelPos(canvas, e);
+    if (peLastPos && (pos.x !== peLastPos.x || pos.y !== peLastPos.y)) {
+      // Interpolate for smooth lines
+      const dx = pos.x - peLastPos.x, dy = pos.y - peLastPos.y;
+      const steps = Math.max(Math.abs(dx), Math.abs(dy));
+      for (let s = 0; s <= steps; s++) {
+        const ix = Math.round(peLastPos.x + dx * s / steps);
+        const iy = Math.round(peLastPos.y + dy * s / steps);
+        paintPixel(ix, iy);
+      }
+      peLastPos = pos;
+    }
+  });
+
+  window.addEventListener('mouseup', () => { peDrawing = false; peLastPos = null; });
+
+  canvas.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    peDrawing = true;
+    const pos = getCanvasPixelPos(canvas, e.touches[0]);
+    paintPixel(pos.x, pos.y);
+  }, { passive: false });
+
+  canvas.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (!peDrawing) return;
+    const pos = getCanvasPixelPos(canvas, e.touches[0]);
+    paintPixel(pos.x, pos.y);
+  }, { passive: false });
+
+  window.addEventListener('touchend', () => { peDrawing = false; });
+
+  // Auto-resize textarea
+  const ta = document.getElementById('user-input');
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 140) + 'px';
+  });
+  ta.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  });
+
+  // Enter key for new file form
+  document.getElementById('new-file-path').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') createNewFile();
+  });
+});
+
+function clearCanvas() {
+  initCanvas(peSize);
+}
+
+async function savePixelArt() {
+  const filePath = document.getElementById('pe-save-path').value.trim();
+  if (!filePath) { showToast('Enter a file path', 'error'); return; }
+  if (!workspaceId) {
+    const res = await fetch('/api/workspace/new', { method: 'POST' });
+    const data = await res.json();
+    workspaceId = data.workspaceId;
+  }
+
+  try {
+    const res = await fetch('/api/texture/save-pixels', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId, filePath, pixels: pePixels, size: peSize })
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+    showToast('Texture saved: ' + filePath, 'success');
+    texCount++;
+    document.getElementById('tex-count').textContent = texCount;
+    refreshTextureList();
+    refreshFileTree();
+  } catch(err) {
+    showToast('Save error: ' + err.message, 'error');
+  }
+}
+
+// ─── EXPORT CODE ───
+async function exportCode() {
+  if (!workspaceId || conversationHistory.length === 0) {
+    showToast('No conversation to export', 'error'); return;
+  }
+  try {
+    const res = await fetch('/api/export-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId, messages: conversationHistory })
+    });
+    const data = await res.json();
+    if (data.written && data.written.length > 0) {
+      showToast(`Exported ${data.written.length} file(s) from chat`, 'success');
+      fileCount += data.written.length;
+      document.getElementById('file-count').textContent = fileCount;
+      refreshFileTree();
+    } else {
+      showToast('No code blocks found in conversation', 'info');
+    }
+  } catch(err) {
+    showToast('Export error: ' + err.message, 'error');
+  }
+}
+
+// ─── PACKAGE / DOWNLOAD ───
+async function packageAddon() {
+  if (!workspaceId) { showToast('No workspace — generate some files first', 'error'); return; }
+  const addonName = document.getElementById('addon-name-input').value.trim() || 'MyAddon';
+  const btn = document.getElementById('dl-btn');
+  btn.disabled = true; btn.textContent = 'Packaging...';
+
+  try {
+    const res = await fetch('/api/package', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ workspaceId, addonName })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(()=>({error:'Unknown error'}));
+      throw new Error(err.error || 'Package failed');
+    }
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${addonName}.mcaddon`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast(`Downloaded ${addonName}.mcaddon`, 'success');
+
+  } catch(err) {
+    showToast('Package error: ' + err.message, 'error');
+  }
+
+  btn.disabled = false; btn.textContent = '⬇ Download .mcaddon';
+}
+</script>
+</body>
+</html>
