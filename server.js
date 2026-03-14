@@ -130,7 +130,7 @@ What kind of addon do you want to make? Tell me your idea — even rough concept
 
 // ── Minecraft color palette for texture generation ──
 const MC_PALETTE = {
-    stone: [0x7F7F7FFF, 0x6B6B6BFF, 0x555555FF, 0x999999FF, 0xAAAAAA FF],
+    stone: [0x7F7F7FFF, 0x6B6B6BFF, 0x555555FF, 0x999999FF, 0xAAAAAAFF],
     grass: [0x5D9C31FF, 0x4E8A25FF, 0x3D6B1AFF, 0x7BBF44FF, 0x8B6914FF],
     dirt: [0x8B6914FF, 0x7A5C10FF, 0x9C7A1EFF, 0x6B4E0EFF, 0xAA8C28FF],
     wood: [0xB5892AFF, 0x9E7722FF, 0xC9A03AFF, 0x7A5C10FF, 0xD4B050FF],
@@ -146,7 +146,7 @@ const MC_PALETTE = {
     soul_sand: [0x4A3728FF, 0x3C2C1EFF, 0x584432FF, 0x2E2014FF, 0x6A5040FF],
     prismarine: [0x2D7A73FF, 0x226860FF, 0x388C84FF, 0x185050FF, 0x50A09AFF],
     end_stone: [0xDAD49AFF, 0xC8C88AFF, 0xECE8AAFF, 0xB8B070FF, 0xF8F4BBFF],
-    generic: [0x888888FF, 0x666666FF, 0xAAAAAA FF, 0x444444FF, 0xCCCCCCFF],
+    generic: [0x888888FF, 0x666666FF, 0xAAAAAAFF, 0x444444FF, 0xCCCCCCFF],
 };
 
 // ── Parse hex color with alpha ──
